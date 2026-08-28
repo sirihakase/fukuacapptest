@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<title>福知山公立大ポータル</title>
+<style>
+  :root {
+    --toolbar-height: 44px;
+    --bg: #1f2937;
+    --btn-bg: #374151;
+    --btn-bg-hover: #4b5563;
+    --btn-disabled: #2b3441;
+    --fg: #f3f4f6;
+    --tab-bg: #111827;
+    --tab-bg-active: #374151;
+    --tab-fg: #9ca3af;
+    --tab-fg-active: #f3f4f6;
+  }
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    overflow: hidden;
+    background: var(--bg);
+    font-family: "Segoe UI", "Hiragino Sans", "Yu Gothic", sans-serif;
+  }
+  #toolbar {
+    height: var(--toolbar-height);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 6px;
+    box-sizing: border-box;
+    -webkit-app-region: drag;
+  }
+  button.nav-btn {
+    -webkit-app-region: no-drag;
+    flex: none;
+    width: 30px;
+    height: 30px;
+    border: none;
+    border-radius: 6px;
+    background: var(--btn-bg);
+    color: var(--fg);
+    font-size: 15px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s ease;
+  }
+  button.nav-btn:hover:not(:disabled) {
+    background: var(--btn-bg-hover);
+  }
+  button.nav-btn:disabled {
+    background: var(--btn-disabled);
+    color: #6b7280;
+    cursor: default;
+  }
+  #tabs {
+    -webkit-app-region: no-drag;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    height: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: thin;
+  }
+  #tabs::-webkit-scrollbar {
+    height: 4px;
+  }
+  .tab {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    max-width: 180px;
+    min-width: 90px;
+    height: 30px;
+    padding: 0 10px;
+    border-radius: 6px;
+    background: var(--tab-bg);
+    color: var(--tab-fg);
+    font-size: 12px;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+  .tab:hover {
+    background: #1a2434;
+  }
+  .tab.active {
+    background: var(--tab-bg-active);
+    color: var(--tab-fg-active);
+  }
+  .tab-label {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .tab-close {
+    flex: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    line-height: 1;
+    color: inherit;
+    opacity: 0.7;
+  }
+  .tab-close:hover {
+    background: #4b5563;
+    opacity: 1;
+  }
+  button.settings-btn {
+    -webkit-app-region: no-drag;
+    flex: none;
+    width: 30px;
+    height: 30px;
+    border: none;
+    border-radius: 6px;
+    background: var(--btn-bg);
+    color: var(--fg);
+    font-size: 15px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s ease;
+  }
+  button.settings-btn:hover {
+    background: var(--btn-bg-hover);
+  }
+</style>
+</head>
+<body>
+  <div id="toolbar">
+    <button class="nav-btn" id="btn-back" title="戻る">&#8592;</button>
+    <button class="nav-btn" id="btn-forward" title="進む">&#8594;</button>
+    <button class="nav-btn" id="btn-reload" title="再読み込み">&#8635;</button>
+    <button class="nav-btn" id="btn-home" title="ホーム（ポータルへ）">&#8962;</button>
+    <div id="tabs"></div>
+    <button class="settings-btn" id="btn-history" title="履歴">&#128337;</button>
+    <button class="settings-btn" id="btn-settings" title="設定">&#9881;</button>
+  </div>
+
+  <script>
+    const btnBack = document.getElementById('btn-back');
+    const btnForward = document.getElementById('btn-forward');
+    const btnReload = document.getElementById('btn-reload');
+    const tabsContainer = document.getElementById('tabs');
+
+    btnBack.addEventListener('click', () => window.toolbarAPI.goBack());
+    btnForward.addEventListener('click', () => window.toolbarAPI.goForward());
+    btnReload.addEventListener('click', () => window.toolbarAPI.reload());
+    document.getElementById('btn-home').addEventListener('click', () => window.toolbarAPI.goHome());
+    document.getElementById('btn-settings').addEventListener('click', () => window.toolbarAPI.openSettings());
+    document.getElementById('btn-history').addEventListener('click', () => window.toolbarAPI.openHistory());
+
+    window.toolbarAPI.onNavState((state) => {
+      btnBack.disabled = !state.canGoBack;
+      btnForward.disabled = !state.canGoForward;
+    });
+
+    function renderTabs(tabsList) {
+      tabsContainer.innerHTML = '';
+      tabsList.forEach((t) => {
+        const el = document.createElement('div');
+        el.className = 'tab' + (t.active ? ' active' : '');
+        el.title = t.title;
+
+        const label = document.createElement('span');
+        label.className = 'tab-label';
+        label.textContent = t.title;
+        el.appendChild(label);
+
+        el.addEventListener('click', () => window.toolbarAPI.switchTab(t.id));
+
+        if (t.closable) {
+          const closeBtn = document.createElement('span');
+          closeBtn.className = 'tab-close';
+          closeBtn.textContent = '\u00d7';
+          closeBtn.addEventListener('click', (ev) => {
+            ev.stopPropagation();
+            window.toolbarAPI.closeTab(t.id);
+          });
+          el.appendChild(closeBtn);
+        }
+
+        tabsContainer.appendChild(el);
+      });
+    }
+
+    window.toolbarAPI.onTabsState(renderTabs);
+  </script>
+</body>
+</html>

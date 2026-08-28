@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<title>履歴</title>
+<style>
+  :root {
+    --bg: #111827;
+    --panel: #1f2937;
+    --fg: #f3f4f6;
+    --sub: #9ca3af;
+    --border: #374151;
+    --hover: #2b3441;
+    --danger: #f87171;
+    --danger-hover: #ef4444;
+  }
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: "Segoe UI", "Hiragino Sans", "Yu Gothic", sans-serif;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+  }
+  header {
+    padding: 14px 16px 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+  }
+  header h1 {
+    font-size: 15px;
+    margin: 0;
+  }
+  #clear-btn {
+    border: none;
+    background: var(--danger);
+    color: #111827;
+    font-size: 12px;
+    padding: 6px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  #clear-btn:hover {
+    background: var(--danger-hover);
+  }
+  #list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 4px 8px;
+  }
+  .entry {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 9px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  .entry:hover {
+    background: var(--hover);
+  }
+  .entry-title {
+    font-size: 13px;
+    color: var(--fg);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .entry-meta {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    font-size: 11px;
+    color: var(--sub);
+  }
+  .entry-url {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+  }
+  .entry-time {
+    flex: none;
+  }
+  #empty {
+    text-align: center;
+    color: var(--sub);
+    font-size: 13px;
+    margin-top: 40px;
+  }
+</style>
+</head>
+<body>
+  <header>
+    <h1>履歴</h1>
+    <button id="clear-btn">履歴を削除</button>
+  </header>
+  <div id="list"></div>
+
+  <script>
+    const listEl = document.getElementById('list');
+    const clearBtn = document.getElementById('clear-btn');
+
+    function formatTime(ts) {
+      const d = new Date(ts);
+      const pad = (n) => String(n).padStart(2, '0');
+      return `${d.getFullYear()}/${pad(d.getMonth() + 1)}/${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    }
+
+    function render(entries) {
+      listEl.innerHTML = '';
+      if (!entries || entries.length === 0) {
+        const empty = document.createElement('div');
+        empty.id = 'empty';
+        empty.textContent = '履歴はまだありません。';
+        listEl.appendChild(empty);
+        return;
+      }
+      entries.forEach((item) => {
+        const el = document.createElement('div');
+        el.className = 'entry';
+
+        const title = document.createElement('div');
+        title.className = 'entry-title';
+        title.textContent = item.title || item.url;
+
+        const meta = document.createElement('div');
+        meta.className = 'entry-meta';
+
+        const url = document.createElement('span');
+        url.className = 'entry-url';
+        url.textContent = item.url;
+
+        const time = document.createElement('span');
+        time.className = 'entry-time';
+        time.textContent = formatTime(item.timestamp);
+
+        meta.appendChild(url);
+        meta.appendChild(time);
+        el.appendChild(title);
+        el.appendChild(meta);
+
+        el.addEventListener('click', () => {
+          window.historyAPI.openUrl(item.url);
+        });
+
+        listEl.appendChild(el);
+      });
+    }
+
+    clearBtn.addEventListener('click', () => {
+      window.historyAPI.clearHistory();
+    });
+
+    window.historyAPI.onUpdated(render);
+    window.historyAPI.getHistory().then(render);
+  </script>
+</body>
+</html>
