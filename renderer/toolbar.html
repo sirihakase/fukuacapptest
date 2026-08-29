@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8" />
-<title>福知山公立大学ポータルアプリ(非公式) Pre-release</title>
+<title>福知山公立大ポータル</title>
 <style>
   :root {
     --toolbar-height: 44px;
@@ -181,6 +181,14 @@
         el.appendChild(label);
 
         el.addEventListener('click', () => window.toolbarAPI.switchTab(t.id));
+        el.addEventListener('contextmenu', (ev) => {
+          ev.preventDefault();
+          window.toolbarAPI.showTabContextMenu(t.id);
+        });
+        el.addEventListener('contextmenu', (ev) => {
+          ev.preventDefault();
+          window.toolbarAPI.showTabContextMenu(t.id);
+        });
 
         if (t.closable) {
           const closeBtn = document.createElement('span');

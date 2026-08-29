@@ -7,6 +7,8 @@ contextBridge.exposeInMainWorld('toolbarAPI', {
   goHome: () => ipcRenderer.send('nav-home'),
   switchTab: (id) => ipcRenderer.send('switch-tab', id),
   closeTab: (id) => ipcRenderer.send('close-tab', id),
+  showTabContextMenu: (id) => ipcRenderer.send('tab-context-menu', id),
+  showTabContextMenu: (id) => ipcRenderer.send('tab-context-menu', id),
   openSettings: () => ipcRenderer.send('open-settings'),
   openHistory: () => ipcRenderer.send('open-history-window'),
   onNavState: (callback) => {

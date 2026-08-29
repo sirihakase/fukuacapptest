@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<title>このアプリについて</title>
+<style>
+  :root {
+    --bg: #111827;
+    --panel: #1f2937;
+    --fg: #f3f4f6;
+    --sub: #9ca3af;
+    --border: #374151;
+    --link: #60a5fa;
+  }
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: "Segoe UI", "Hiragino Sans", "Yu Gothic", sans-serif;
+    box-sizing: border-box;
+  }
+  #panel {
+    padding: 22px 24px;
+    box-sizing: border-box;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+  h1 {
+    font-size: 16px;
+    margin: 0 0 2px;
+  }
+  #version {
+    font-size: 12px;
+    color: var(--sub);
+    margin-bottom: 16px;
+  }
+  section {
+    font-size: 12px;
+    line-height: 1.7;
+    color: #d1d5db;
+    border-top: 1px solid var(--border);
+    padding-top: 12px;
+    margin-top: 4px;
+  }
+  section + section {
+    margin-top: 10px;
+    padding-top: 10px;
+  }
+  section h2 {
+    font-size: 12px;
+    margin: 0 0 4px;
+    color: var(--fg);
+  }
+  a, .link-btn {
+    color: var(--link);
+    text-decoration: none;
+    cursor: pointer;
+    font-size: 12px;
+  }
+  a:hover, .link-btn:hover {
+    text-decoration: underline;
+  }
+  #footer {
+    margin-top: auto;
+    padding-top: 14px;
+    font-size: 11px;
+    color: #6b7280;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+  <div id="panel">
+    <h1 id="app-name">福知山公立大学ポータルアプリ</h1>
+    <div id="version">バージョン 読み込み中...</div>
+
+    <section>
+      <h2>このアプリについて</h2>
+      本アプリは、福知山公立大学のポータルサイトへの自動ログインを目的として、いちはが個人的に開発した非公式のデスクトップアプリです。
+      <br>福知山公立大学および同ポータルシステムの開発元とは関係がなく、公式に提供・保証されたものではありません。
+      <br>福知山公立大学のロゴについては、公立大学法人福知山公立大学のロゴマーク及びロゴタイプに関する規程に準じて使用しています。
+    </section>
+
+    <section>
+      <h2>プライバシーについて</h2>
+      入力されたログインID・パスワードは、お使いの端末内にOSレベルの暗号化を施した状態でのみ保存され、開発者を含む第三者に送信されることはありません。
+    </section>
+
+    <section>
+      <h2>利用にあたって</h2>
+      大学の情報セキュリティポリシーおよび利用規約に反しない範囲でご利用ください。本アプリの利用によって生じたいかなる不利益についても、開発者は責任を負いません。
+    </section>
+
+    <section>
+      <h2>お問い合わせ</h2>
+      バグ等ありましたら、開発元いちは(32645009@fukuchiyama.ac.jp)にご連絡お願いします。
+    </section>
+
+    <div id="footer">Copyright &#169; <span id="year"></span> いちは</div>
+  </div>
+
+  <script>
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    window.aboutAPI.getInfo().then((info) => {
+      document.getElementById('app-name').textContent = info.name;
+      document.getElementById('version').textContent = 'バージョン ' + info.version;
+    });
+  </script>
+</body>
+</html>

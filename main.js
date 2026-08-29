@@ -13,6 +13,7 @@ const MAX_HISTORY_ENTRIES = 500;
 let mainWindow = null;
 let credWindow = null;
 let historyWindow = null;
+let aboutWindow = null;
 let history = [];
 
 // タブ管理（1つのウィンドウに複数のBrowserViewを持たせ、表示中のものだけ
@@ -114,6 +115,39 @@ function addHistoryEntry(url, title) {
   saveHistory();
   broadcastHistory();
 }
+
+// ---------- このアプリについて ----------
+
+function createAboutWindow() {
+  if (aboutWindow) {
+    aboutWindow.focus();
+    return;
+  }
+  aboutWindow = new BrowserWindow({
+    width: 420,
+    height: 440,
+    resizable: false,
+    minimizable: false,
+    maximizable: false,
+    title: 'このアプリについて',
+    icon: resolveIconPath(),
+    webPreferences: {
+      preload: path.join(__dirname, 'preload-about.js'),
+      contextIsolation: true,
+      nodeIntegration: false,
+    },
+  });
+  aboutWindow.setMenuBarVisibility(false);
+  aboutWindow.loadFile(path.join(__dirname, 'renderer', 'about.html'));
+  aboutWindow.on('closed', () => {
+    aboutWindow = null;
+  });
+}
+
+ipcMain.handle('get-app-info', () => ({
+  name: '福知山公立大学ポータルアプリ',
+  version: app.getVersion(),
+}));
 
 function createHistoryWindow() {
   if (historyWindow) {
@@ -297,10 +331,37 @@ function createTab(url, opts = {}) {
     const menu = buildContextMenu(view, params);
     menu.popup({ window: mainWindow });
   });
+  view.webContents.on('before-input-event', (event, input) => {
+    if (input.type !== 'keyDown') return;
+    const isReloadShortcut =
+      input.key === 'F5' || ((input.control || input.meta) && input.key.toLowerCase() === 'r');
+    if (isReloadShortcut) {
+      event.preventDefault();
+      view.webContents.reload();
+    }
+  });
 
   view.webContents.loadURL(url);
   broadcastTabs();
   return id;
+}
+
+// 指定したタブと同じURLを新しいタブとして開き、複製として切り替える
+function duplicateTab(id) {
+  const tab = tabs.get(id);
+  if (!tab) return;
+  const url = tab.view.webContents.getURL();
+  const newId = createTab(url, { title: tab.title, closable: true });
+  setActiveTab(newId);
+}
+
+// 指定したタブと同じURLで、新しい（閉じられる）タブを開いてそちらへ切り替える
+function duplicateTab(id) {
+  const source = tabs.get(id);
+  if (!source) return;
+  const url = source.view.webContents.getURL() || PORTAL_URL;
+  const newId = createTab(url, { title: source.title, closable: true });
+  setActiveTab(newId);
 }
 
 function closeTab(id) {
@@ -605,6 +666,16 @@ function createMainWindow() {
     broadcastTabs();
     updateNavState();
   });
+  mainWindow.webContents.on('before-input-event', (event, input) => {
+    if (input.type !== 'keyDown') return;
+    const isReloadShortcut =
+      input.key === 'F5' || ((input.control || input.meta) && input.key.toLowerCase() === 'r');
+    if (isReloadShortcut) {
+      event.preventDefault();
+      const view = getActiveView();
+      if (view) view.webContents.reload();
+    }
+  });
 
   portalTabId = createTab(PORTAL_URL, { title: 'ポータル', closable: false });
   setActiveTab(portalTabId);
@@ -636,12 +707,32 @@ ipcMain.on('nav-home', () => {
 ipcMain.on('switch-tab', (event, id) => setActiveTab(id));
 ipcMain.on('close-tab', (event, id) => closeTab(id));
 ipcMain.on('open-history-window', () => createHistoryWindow());
+ipcMain.on('tab-context-menu', (event, id) => {
+  const tab = tabs.get(id);
+  if (!tab || !mainWindow) return;
+  const menu = Menu.buildFromTemplate([
+    { label: '複製', click: () => duplicateTab(id) },
+    { type: 'separator' },
+    { label: '閉じる', enabled: tab.closable, click: () => closeTab(id) },
+  ]);
+  menu.popup({ window: mainWindow });
+});
+ipcMain.on('tab-context-menu', (event, id) => {
+  const tab = tabs.get(id);
+  if (!tab || !mainWindow) return;
+  const menu = Menu.buildFromTemplate([
+    { label: '複製', click: () => duplicateTab(id) },
+    { type: 'separator' },
+    { label: '閉じる', enabled: tab.closable, click: () => closeTab(id) },
+  ]);
+  menu.popup({ window: mainWindow });
+});
 
 ipcMain.on('open-settings', () => {
   if (!mainWindow) return;
   const result = dialog.showMessageBoxSync(mainWindow, {
     type: 'question',
-    buttons: ['キャンセル', 'アップデートを確認', 'ログイン情報を再設定'],
+    buttons: ['キャンセル', 'アップデートを確認', 'ログイン情報を再設定', 'このアプリについて'],
     defaultId: 0,
     cancelId: 0,
     title: '設定',
@@ -653,6 +744,8 @@ ipcMain.on('open-settings', () => {
     clearCredentials();
     mainWindow.close();
     createCredentialsWindow();
+  } else if (result === 3) {
+    createAboutWindow();
   }
 });
 
